@@ -1,33 +1,56 @@
-# ── Core LLM + Agent ──────────────────────────────────────────────
+# BUJJI v4 — Complete Requirements
+# Install: pip install -r requirements.txt
+
+# Core LLM + Agent
 langchain
 langchain-groq
 langchain-core
 langgraph
 
-# ── Voice ─────────────────────────────────────────────────────────
+# Voice
 SpeechRecognition
 pyttsx3
 pyaudio
 pvporcupine
 
-# ── Memory ────────────────────────────────────────────────────────
+# Memory
 chromadb
 
-# ── Tools ─────────────────────────────────────────────────────────
+# Search + Web
 ddgs
+
+# Communication
 pywhatkit
+selenium
+webdriver-manager
+
+# Spotify
+spotipy
+
+# PC Control + Automation
 psutil
-schedule
+pyautogui
 pyperclip
+pycaw
+comtypes
+
+# Screen Reading
+pytesseract
+Pillow
+
+# Scheduling
+schedule
+
+# Emotion Detection
 librosa
 numpy
 
-# ── API ───────────────────────────────────────────────────────────
+# CLI
+rich
+
+# API
 fastapi
 uvicorn[standard]
 
-# ── CLI ───────────────────────────────────────────────────────────
-rich
-
-# ── Utils ─────────────────────────────────────────────────────────
+# Utils
 python-dotenv
