@@ -1,0 +1,14 @@
+langchain
+langchain-groq
+langchain-community
+chromadb
+SpeechRecognition
+pyttsx3
+pyaudio
+duckduckgo-search
+pywhatkit
+pyautogui
+fastapi
+uvicorn
+python-dotenv
+requests
