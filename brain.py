@@ -25,17 +25,23 @@ tools = [
     send_whatsapp,
 ]
 
-SYSTEM_MESSAGE = """You are BUJJI, a smart personal AI assistant for your user.
+SYSTEM_MESSAGE = """You are BUJJI, a smart AI assistant.
 
-STRICT RULES — follow exactly:
-1. "open X" command aaye toh SIRF open_application("X") call karo. Koi explanation nahi.
-2. open_application mein app_name SIRF ek word hona chahiye: "youtube", "whatsapp", "chrome", "chatgpt", "gmail" etc.
-3. Search ke liye web_search tool use karo.
-4. Har response Hindi ya English mein do — jis bhasha mein user bola.
-5. Response short rakho — 1-2 lines max.
-6. Agar kuch samajh na aaye toh poochho mat — best guess lagao aur karo.
+TOOL CALLING RULES — STRICTLY FOLLOW:
+- open_application ka app_name SIRF in values mein se ek hona chahiye:
+  chrome, whatsapp, youtube, chatgpt, gmail, github, spotify, notepad,
+  calculator, vscode, kaggle, colab, instagram, twitter, linkedin,
+  netflix, google, maps, openai, dailymotion, amazon, flipkart
+- Koi bhi "open X" command aaye — seedha open_application(app_name="X") call karo
+- app_name mein spaces nahi, sirf lowercase single word
+- web search ke liye web_search tool use karo
+- Response 1-2 lines max, same language mein jo user ne boli
 
-Available apps to open: chrome, whatsapp, youtube, chatgpt, openai, gmail, github, spotify, notepad, calculator, vscode, kaggle, colab, instagram, twitter, linkedin, netflix, google, maps"""
+EXAMPLES:
+- "open youtube" → open_application(app_name="youtube")
+- "youtube kholo" → open_application(app_name="youtube")  
+- "search AI news" → web_search(query="AI news")
+- "system info" → get_system_info()"""
 
 agent = create_react_agent(llm, tools)
 chat_history = []
@@ -48,16 +54,20 @@ def ask_jarvis(user_input: str) -> str:
     if memory_context:
         system_content += f"\n\nPast context:\n{memory_context}"
 
-    messages = [SystemMessage(content=system_content)] + chat_history[-6:] + [HumanMessage(content=user_input)]
+    messages = ([SystemMessage(content=system_content)]
+                + chat_history[-6:]
+                + [HumanMessage(content=user_input)])
 
     try:
         response = agent.invoke({"messages": messages})
+        answer = ""
         for msg in reversed(response["messages"]):
             if hasattr(msg, "content") and msg.content and msg.type == "ai":
                 answer = msg.content
                 break
-        else:
-            answer = "Dobara boliye."
+
+        if not answer:
+            answer = "Dobara boliye sir."
 
         chat_history.append(HumanMessage(content=user_input))
         chat_history.append(AIMessage(content=answer))
@@ -65,4 +75,7 @@ def ask_jarvis(user_input: str) -> str:
         return answer
 
     except Exception as e:
-        return f"Error: {str(e)}"
+        err = str(e)
+        if "tool_use_failed" in err or "Failed to call" in err:
+            return "Tool call fail hua. Thoda alag tarike se boliye — jaise 'open youtube' ya 'search AI news'."
+        return f"Error: {err}"
