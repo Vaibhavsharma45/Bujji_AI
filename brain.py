@@ -27,23 +27,23 @@ tools = [
 
 SYSTEM_MESSAGE = """You are BUJJI, a smart AI assistant.
 
-TOOL CALLING RULES — STRICTLY FOLLOW:
-- open_application ka app_name SIRF in values mein se ek hona chahiye:
-  chrome, whatsapp, youtube, chatgpt, gmail, github, spotify, notepad,
-  calculator, vscode, kaggle, colab, instagram, twitter, linkedin,
-  netflix, google, maps, openai, dailymotion, amazon, flipkart
-- Koi bhi "open X" command aaye — seedha open_application(app_name="X") call karo
-- app_name mein spaces nahi, sirf lowercase single word
-- web search ke liye web_search tool use karo
-- Response 1-2 lines max, same language mein jo user ne boli
+STRICT RULES:
+1. Har tool sirf EK BAAR call karo. Kabhi retry mat karo.
+2. Tool call ke baad seedha Final Answer do.
+3. open_application ka app_name SIRF yeh values:
+   chrome, whatsapp, youtube, chatgpt, gmail, github, spotify,
+   notepad, calculator, vscode, kaggle, colab, instagram, twitter,
+   linkedin, netflix, google, maps, openai, dailymotion, amazon, flipkart
+4. "open email" ya "email open karo" = open_application(app_name="gmail") — SIRF EK BAAR
+5. "send email" = send_email tool use karo
+6. Response 1-2 lines max, same language mein jo user ne boli
+7. Agar tool successful return kare — bas confirm karo, loop mat karo"""
 
-EXAMPLES:
-- "open youtube" → open_application(app_name="youtube")
-- "youtube kholo" → open_application(app_name="youtube")  
-- "search AI news" → web_search(query="AI news")
-- "system info" → get_system_info()"""
-
-agent = create_react_agent(llm, tools)
+agent = create_react_agent(
+    llm,
+    tools,
+    prompt=SYSTEM_MESSAGE
+)
 chat_history = []
 
 def ask_jarvis(user_input: str) -> str:
@@ -54,12 +54,17 @@ def ask_jarvis(user_input: str) -> str:
     if memory_context:
         system_content += f"\n\nPast context:\n{memory_context}"
 
-    messages = ([SystemMessage(content=system_content)]
-                + chat_history[-6:]
-                + [HumanMessage(content=user_input)])
+    messages = (
+        [SystemMessage(content=system_content)]
+        + chat_history[-6:]
+        + [HumanMessage(content=user_input)]
+    )
 
     try:
-        response = agent.invoke({"messages": messages})
+        response = agent.invoke(
+            {"messages": messages},
+            config={"recursion_limit": 5}  # Max 5 steps — loop rok dega
+        )
         answer = ""
         for msg in reversed(response["messages"]):
             if hasattr(msg, "content") and msg.content and msg.type == "ai":
@@ -67,7 +72,7 @@ def ask_jarvis(user_input: str) -> str:
                 break
 
         if not answer:
-            answer = "Dobara boliye sir."
+            answer = "Ho gaya sir."
 
         chat_history.append(HumanMessage(content=user_input))
         chat_history.append(AIMessage(content=answer))
@@ -76,6 +81,8 @@ def ask_jarvis(user_input: str) -> str:
 
     except Exception as e:
         err = str(e)
+        if "recursion" in err.lower():
+            return "Ho gaya sir."
         if "tool_use_failed" in err or "Failed to call" in err:
-            return "Tool call fail hua. Thoda alag tarike se boliye — jaise 'open youtube' ya 'search AI news'."
+            return "Thoda alag tarike se boliye — jaise 'open gmail' ya 'search karo'."
         return f"Error: {err}"
