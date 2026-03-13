@@ -10,10 +10,11 @@ WAKE_WORD     = "jarvis"
 _listening  = False
 _thread     = None
 _callback   = None
-_cooldown   = False  # Duplicate detection rok ne ke liye
+_lock       = threading.Lock()
+_processing = False  # Command process ho raha hai ya nahi
 
 def _listen_loop():
-    global _listening, _cooldown
+    global _listening, _processing
 
     try:
         porcupine = pvporcupine.create(
@@ -44,17 +45,28 @@ def _listen_loop():
             pcm   = struct.unpack_from("h" * porcupine.frame_length, pcm)
             index = porcupine.process(pcm)
 
-            if index >= 0 and not _cooldown:
-                _cooldown = True
+            if index >= 0:
+                with _lock:
+                    if _processing:
+                        continue  # Already processing — ignore
+                    _processing = True
+
                 print("[Wake] Detected!")
-                threading.Thread(target=_callback, daemon=True).start()
-                time.sleep(3)  # 3 sec cooldown — double trigger nahi hoga
-                _cooldown = False
+                threading.Thread(target=_run_callback, daemon=True).start()
     finally:
         stream.stop_stream()
         stream.close()
         pa.terminate()
         porcupine.delete()
+
+def _run_callback():
+    global _processing
+    try:
+        if _callback:
+            _callback()
+    finally:
+        time.sleep(2)
+        _processing = False  # Done — ab dobara sun sakte hain
 
 def start_wake_detection(on_wake_callback):
     global _listening, _thread, _callback
