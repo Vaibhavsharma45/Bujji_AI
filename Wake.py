@@ -4,8 +4,8 @@ import struct
 import threading
 import time
 
-PICOVOICE_KEY = "YOUR_ACCESS_KEY_HERE"
-WAKE_WORD     = "jarvis"
+PICOVOICE_KEY = "KdA+Hptz+YxsFsqvTklFbrPtm4ndd/+k51BbeeaUAlLT5E7N17cozQ=="
+WAKE_WORD     = "Hey Bujji"
 
 _listening  = False
 _thread     = None
