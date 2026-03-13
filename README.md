@@ -25,11 +25,17 @@
 
 <!-- Replace these with your actual screenshot paths after pushing to GitHub -->
 
-| Wake Word Active | Voice Command | Dashboard |
+| Wake Word Active | 
 |:---:|:---:|:---:|
-| ![Wake](https://github.com/Vaibhavsharma45/Bujji_AI/blob/main/assets/screenshot/demo1.png) 
+| ![Wake](https://github.com/Vaibhavsharma45/Bujji_AI/blob/main/assets/screenshot/demo1.png)
+| Voice Command | 
+|:---:|:---:|:---:|
 | ![Voice](https://github.com/Vaibhavsharma45/Bujji_AI/blob/main/assets/screenshot/demo2.png) 
+| Dashboard |
+|:---:|:---:|:---:|
 | ![Dashboard](https://github.com/Vaibhavsharma45/Bujji_AI/blob/main/assets/screenshot/demo3.png) 
+| Coding | 
+|:---:|:---:|:---:|
 | ![Coding](https://github.com/Vaibhavsharma45/Bujji_AI/blob/main/assets/screenshot/demo2.png)
 
 </div>
