@@ -27,7 +27,10 @@
 
 | Wake Word Active | Voice Command | Dashboard |
 |:---:|:---:|:---:|
-| ![Wake](https://github.com/Vaibhavsharma45/Bujji_AI/blob/main/assets/screenshot/demo1.png) | ![Voice](assets/screenshots/demo2.png) | ![Dashboard](assets/screenshots/demo3.png) |
+| ![Wake](https://github.com/Vaibhavsharma45/Bujji_AI/blob/main/assets/screenshot/demo1.png) 
+| ![Voice](https://github.com/Vaibhavsharma45/Bujji_AI/blob/main/assets/screenshot/demo2.png) 
+| ![Dashboard](https://github.com/Vaibhavsharma45/Bujji_AI/blob/main/assets/screenshot/demo3.png) 
+| ![Coding](https://github.com/Vaibhavsharma45/Bujji_AI/blob/main/assets/screenshot/demo2.png)
 
 </div>
 
