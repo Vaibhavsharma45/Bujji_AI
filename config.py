@@ -9,5 +9,5 @@ GROQ_MODEL   = "llama3-70b-8192"                   # Fast & free
 EMAIL_ADDRESS  = os.getenv("EMAIL_ADDRESS", "")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "")   # Gmail app password
 
-JARVIS_NAME = "JARVIS"
-WAKE_WORD   = "jarvis"
+BUJJI_NAME = "BUJJI"
+WAKE_WORD   = "bujji"

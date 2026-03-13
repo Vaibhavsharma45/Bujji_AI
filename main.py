@@ -1,12 +1,11 @@
-import time
 from voice import speak, listen
-from brain import ask_jarvis
+from brain import ask_bujji
 from config import WAKE_WORD
 
-def run_jarvis():
-    speak("JARVIS online. How can I assist you, sir?")
+def run_bujji():
+    speak("BUJJI online. How can I assist you, sir?")
     print("\n" + "="*50)
-    print("   JARVIS is running. Say 'jarvis' to wake me.")
+    print("   BUJJI is running. Say 'bujji' to wake me.")
     print("   Type 'quit' to exit.")
     print("="*50 + "\n")
 
@@ -16,21 +15,35 @@ def run_jarvis():
 
             if mode == "v":
                 print(f"\nListening for wake word '{WAKE_WORD}'...")
+                print("(Tip: bolne ke baad 1-2 sec ruko)")
                 trigger = listen(timeout=8)
-                if WAKE_WORD not in trigger:
-                    print("Wake word not detected. Try again.")
+
+                # Debug: show what was heard
+                print(f"[Debug] Suna: '{trigger}'")
+
+                # Flexible wake word check
+                trigger_clean = trigger.lower().strip()
+                wake_variants = [WAKE_WORD, "bujji", "travis", "davis", "service", "jar vis"]
+                detected = any(w in trigger_clean for w in wake_variants)
+
+                if not detected:
+                    print("Wake word detect nahi hua. Dobara try karo ya 't' press karo text mode ke liye.")
                     continue
+
                 speak("Yes sir, I'm listening.")
                 user_input = listen(timeout=10)
+                print(f"[Debug] Command suna: '{user_input}'")
+
                 if not user_input:
                     speak("I didn't catch that. Please try again.")
                     continue
+
             else:
                 user_input = input("\nYou: ").strip()
                 if not user_input:
                     continue
                 if user_input.lower() in ["quit", "exit", "bye"]:
-                    speak("Goodbye sir. JARVIS going offline.")
+                    speak("Goodbye sir. BUJJI going offline.")
                     break
 
             if "clear memory" in user_input.lower():
@@ -40,13 +53,13 @@ def run_jarvis():
                 continue
 
             print("\nProcessing...\n")
-            response = ask_jarvis(user_input)
+            response = ask_bujji(user_input)
             speak(response)
             print()
 
         except KeyboardInterrupt:
-            speak("JARVIS shutting down. Goodbye sir.")
+            speak("BUJJI shutting down. Goodbye sir.")
             break
 
 if __name__ == "__main__":
-    run_jarvis()
+    run_bujji()

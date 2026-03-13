@@ -1,9 +1,10 @@
 from langchain_groq import ChatGroq
-from langchain.agents import AgentExecutor, create_react_agent
-from langchain.prompts import PromptTemplate
-from langchain.memory import ConversationBufferWindowMemory
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+from langchain_core.tools import tool
+from langgraph.prebuilt import create_react_agent
 
-from config import GROQ_API_KEY, GROQ_MODEL, JARVIS_NAME
+from config import GROQ_API_KEY, GROQ_MODEL
 from tools.search import web_search
 from tools.pc_control import open_application, list_files, take_screenshot, get_system_info
 from tools.email_tool import send_email
@@ -26,65 +27,33 @@ tools = [
     send_whatsapp,
 ]
 
-SYSTEM_PROMPT = """You are JARVIS, an advanced AI assistant — just like Iron Man's JARVIS.
+SYSTEM_MESSAGE = """You are BUJJI, an advanced AI assistant — just like Iron Man's BUJJI.
 You are helpful, intelligent, witty, and proactive. You speak in a friendly but professional tone.
 You have access to powerful tools: web search, PC control, email, WhatsApp, and more.
+Always be concise and helpful. Address the user as 'sir' occasionally for the BUJJI feel."""
 
-Relevant past memories:
-{memory_context}
+agent = create_react_agent(llm, tools)
 
-Tools available:
-{tools}
+chat_history = []
 
-Tool names: {tool_names}
+def ask_bujji(user_input: str) -> str:
+    global chat_history
 
-Always think step by step using this format:
-Question: the user's request
-Thought: what should I do?
-Action: the tool to use
-Action Input: the input to the tool
-Observation: the result
-... (repeat if needed)
-Thought: I now have the final answer
-Final Answer: your response to the user
+    memory_context = get_relevant_memory(user_input)
 
-Begin!
+    system_content = SYSTEM_MESSAGE
+    if memory_context:
+        system_content += f"\n\nRelevant past context:\n{memory_context}"
 
-Conversation so far:
-{chat_history}
+    messages = [SystemMessage(content=system_content)] + chat_history[-10:] + [HumanMessage(content=user_input)]
 
-Question: {input}
-Thought: {agent_scratchpad}"""
-
-prompt = PromptTemplate(
-    input_variables=["input", "agent_scratchpad", "chat_history", "memory_context", "tools", "tool_names"],
-    template=SYSTEM_PROMPT,
-)
-
-memory = ConversationBufferWindowMemory(
-    memory_key="chat_history",
-    k=10,
-    return_messages=False
-)
-
-agent        = create_react_agent(llm, tools, prompt)
-agent_executor = AgentExecutor(
-    agent=agent,
-    tools=tools,
-    memory=memory,
-    verbose=True,
-    handle_parsing_errors=True,
-    max_iterations=5,
-)
-
-def ask_jarvis(user_input: str) -> str:
-    memory_context = get_relevant_memory(user_input) or "No relevant past context."
     try:
-        response = agent_executor.invoke({
-            "input": user_input,
-            "memory_context": memory_context,
-        })
-        answer = response.get("output", "I couldn't process that.")
+        response = agent.invoke({"messages": messages})
+        answer = response["messages"][-1].content
+
+        chat_history.append(HumanMessage(content=user_input))
+        chat_history.append(AIMessage(content=answer))
+
         save_memory(user_input, answer)
         return answer
     except Exception as e:

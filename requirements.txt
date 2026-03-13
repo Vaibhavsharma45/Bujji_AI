@@ -1,6 +1,7 @@
-langchain
-langchain-groq
-langchain-community
+langchain==0.3.25
+langchain-groq==0.3.2
+langchain-community==0.3.23
+langchain-core==0.3.55
 chromadb
 SpeechRecognition
 pyttsx3
