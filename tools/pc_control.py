@@ -28,6 +28,8 @@ BROWSER_URLS = {
     "github":    "https://www.github.com",
 }
 
+KNOWN_APPS = list(WINDOWS_APP_PATHS.keys()) + list(BROWSER_URLS.keys())
+
 @tool
 def open_application(app_name: str) -> str:
     """Open any application or website. Examples: chrome, whatsapp, youtube, notepad, calculator, spotify, vscode"""
@@ -37,39 +39,40 @@ def open_application(app_name: str) -> str:
     if name in BROWSER_URLS:
         try:
             webbrowser.open(BROWSER_URLS[name])
-            return f"Opened {app_name} in browser."
+            return f"Opened {app_name} in browser successfully."
         except Exception as e:
             return f"Browser open failed: {e}"
 
-    # Direct .exe paths
+    # Direct .exe paths check
     if name in WINDOWS_APP_PATHS:
         path = WINDOWS_APP_PATHS[name]
         if os.path.exists(path):
-            subprocess.Popen([path])
-            return f"Opened {app_name}."
+            try:
+                subprocess.Popen([path])
+                return f"Opened {app_name} successfully."
+            except Exception as e:
+                return f"Could not open {app_name}: {e}"
 
-    # Chrome fallback paths
+    # Chrome special case
     if name == "chrome":
         for path in [WINDOWS_APP_PATHS["chrome"], WINDOWS_APP_PATHS["chrome_alt"]]:
             if os.path.exists(path):
                 subprocess.Popen([path])
-                return "Opened Chrome."
+                return "Opened Chrome successfully."
         webbrowser.open("https://www.google.com")
         return "Opened default browser."
 
-    # Try Windows 'start' command
-    try:
-        subprocess.Popen(["start", app_name], shell=True)
-        return f"Opened {app_name}."
-    except Exception:
-        pass
+    # System built-in commands (notepad, calc etc)
+    builtin = ["notepad", "calc", "mspaint", "explorer", "cmd", "taskmgr"]
+    if name in builtin:
+        try:
+            subprocess.Popen([name])
+            return f"Opened {name} successfully."
+        except Exception as e:
+            return f"Could not open {name}: {e}"
 
-    # Try webbrowser as last resort
-    try:
-        webbrowser.open(f"https://www.{name}.com")
-        return f"Opened {app_name} in browser."
-    except Exception as e:
-        return f"Could not open {app_name}: {e}"
+    # Unknown app - don't loop, just return error clearly
+    return f"'{app_name}' nahi mila. Available apps: {', '.join(KNOWN_APPS)}"
 
 @tool
 def list_files(folder_path: str = ".") -> str:
