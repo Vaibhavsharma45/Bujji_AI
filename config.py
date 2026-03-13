@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")      # Free at console.groq.com
-GROQ_MODEL   = "llama3-70b-8192"                   # Fast & free
+GROQ_MODEL   = "llama-3.3-70b-versatile"                   # Fast & free
 
 EMAIL_ADDRESS  = os.getenv("EMAIL_ADDRESS", "")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "")   # Gmail app password
