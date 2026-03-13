@@ -1,17 +1,10 @@
-"""
-voice.py — TTS and STT, subprocess-isolated, crash-safe
-"""
-import subprocess
-import sys
-import os
-import time
+import subprocess, sys, os, time
 import speech_recognition as sr
 from config import TTS_RATE, TTS_VOLUME, STT_LANGUAGE, STT_TIMEOUT, STT_PHRASE_LIMIT
 from logger import get_logger
 
 log = get_logger("voice")
 
-# ── TTS ────────────────────────────────────────────────────────────
 _TTS_SCRIPT = """
 import pyttsx3, sys
 text = sys.argv[1]
@@ -38,86 +31,78 @@ with open(_tts_path, "w", encoding="utf-8") as _f:
     _f.write(_TTS_SCRIPT)
 
 
-def speak(text: str, rate: int = TTS_RATE, volume: float = TTS_VOLUME):
+def speak(text, rate=TTS_RATE, volume=TTS_VOLUME):
     if not text:
         return
     text = text.strip()
-    log.info(f"TTS: {text[:80]}")
+    log.info("TTS: " + text[:80])
     try:
         kwargs = {}
         if os.name == "nt":
             kwargs["creationflags"] = subprocess.CREATE_NO_WINDOW
         subprocess.run(
             [sys.executable, _tts_path, text, str(rate), str(volume)],
-            timeout=45,
-            stderr=subprocess.DEVNULL,
-            **kwargs,
+            timeout=45, stderr=subprocess.DEVNULL, **kwargs,
         )
-    except subprocess.TimeoutExpired:
-        log.warning("TTS timed out")
     except Exception as e:
-        log.error(f"TTS error: {e}")
+        log.error("TTS: " + str(e))
 
 
-# ── STT ────────────────────────────────────────────────────────────
 _recognizer = sr.Recognizer()
-_recognizer.pause_threshold        = 0.8
-_recognizer.energy_threshold       = 300
+_recognizer.pause_threshold = 0.8
+_recognizer.energy_threshold = 300
 _recognizer.dynamic_energy_threshold = True
 
 
-def listen(timeout: int = STT_TIMEOUT, phrase_limit: int = STT_PHRASE_LIMIT) -> str:
-    """Listen and return recognised text. Returns '' on silence/error."""
+def listen(timeout=STT_TIMEOUT, phrase_limit=STT_PHRASE_LIMIT):
     try:
         with sr.Microphone() as src:
-            _recognizer.adjust_for_ambient_noise(src, duration=0.3)
-            log.debug("Listening...")
+            _recognizer.adjust_for_ambient_noise(src, duration=0.2)
             audio = _recognizer.listen(src, timeout=timeout, phrase_time_limit=phrase_limit)
         text = _recognizer.recognize_google(audio, language=STT_LANGUAGE)
-        log.info(f"STT: {text}")
+        log.info("STT: " + text)
         return text.lower().strip()
     except sr.WaitTimeoutError:
         return ""
     except sr.UnknownValueError:
         return ""
     except sr.RequestError as e:
-        log.error(f"Speech API error: {e}")
+        log.error("Speech API: " + str(e))
         return ""
     except KeyboardInterrupt:
         raise
     except Exception as e:
-        log.error(f"Listen error: {e}")
+        log.error("Listen: " + str(e))
         return ""
 
 
-def listen_and_transcribe() -> tuple[str, bytes, int]:
-    """
-    Listen once, return (text, raw_bytes, sample_rate).
-    Raw bytes used for emotion detection.
-    Returns ('', b'', 0) on failure.
-    """
+def listen_and_transcribe():
+    """Listen once, return (text, raw_bytes, sample_rate). CPU-friendly."""
     try:
         with sr.Microphone(sample_rate=16000) as src:
-            _recognizer.adjust_for_ambient_noise(src, duration=0.3)
-            log.debug("Listening (with raw)...")
+            _recognizer.adjust_for_ambient_noise(src, duration=0.2)
             audio = _recognizer.listen(
                 src,
                 timeout=STT_TIMEOUT,
-                phrase_time_limit=STT_PHRASE_LIMIT
+                phrase_time_limit=STT_PHRASE_LIMIT,
             )
         raw  = audio.get_raw_data(convert_rate=16000, convert_width=2)
         text = _recognizer.recognize_google(audio, language=STT_LANGUAGE)
-        log.info(f"STT: {text}")
+        log.info("STT: " + text)
         return text.lower().strip(), raw, 16000
     except sr.WaitTimeoutError:
+        time.sleep(0.3)   # CPU relief on silence
         return "", b"", 0
     except sr.UnknownValueError:
+        time.sleep(0.2)
         return "", b"", 0
     except sr.RequestError as e:
-        log.error(f"Speech API: {e}")
+        log.error("Speech API: " + str(e))
+        time.sleep(1.0)
         return "", b"", 0
     except KeyboardInterrupt:
         raise
     except Exception as e:
-        log.error(f"Listen error: {e}")
+        log.error("Listen: " + str(e))
+        time.sleep(0.5)
         return "", b"", 0
