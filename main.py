@@ -1,24 +1,27 @@
 import threading
+import time
 from voice import speak, listen
 from brain import ask_jarvis
 
 def clean_command(text: str) -> str:
-    """Wake word aur filler words hata do command se."""
-    for filler in ["hey jarvis", "jarvis", "hey bujji", "bujji", "okay bujji", "arre bujji"]:
+    for filler in ["hey jarvis", "jarvis", "hey bujji", "bujji", "okay bujji"]:
         text = text.replace(filler, "").strip()
     return text.strip()
 
 def handle_command():
-    """Wake detect hone ke baad command suno."""
     speak("Yes sir!")
+    time.sleep(1.5)  # TTS khatam hone ka wait karo
+    
+    print("Listening for command...")
     user_input = listen(timeout=8)
+
     if not user_input:
-        speak("Suna nahi, dobara boliye.")
+        speak("Suna nahi, dobara Jarvis bolo.")
         return
 
     user_input = clean_command(user_input)
     if not user_input:
-        speak("Koi command nahi mili.")
+        speak("Command samajh nahi aayi.")
         return
 
     print(f"You: {user_input}")
