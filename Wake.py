@@ -5,7 +5,7 @@ import threading
 import time
 
 PICOVOICE_KEY = "KdA+Hptz+YxsFsqvTklFbrPtm4ndd/+k51BbeeaUAlLT5E7N17cozQ=="
-WAKE_WORD     = "JARVIS"  # Picovoice ke predefined keywords: https://picovoice.ai/docs/porcupine/available-keywords/
+WAKE_WORD     = "jarvis"  # Picovoice ke predefined keywords: https://picovoice.ai/docs/porcupine/available-keywords/
 
 _listening  = False
 _thread     = None
