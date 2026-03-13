@@ -27,7 +27,7 @@ tools = [
     send_whatsapp,
 ]
 
-SYSTEM_MESSAGE = """You are BUJJI, an advanced AI assistant — just like Iron Man's BUJJI.
+SYSTEM_MESSAGE = """You are BUJJI, an advanced AI assistant — your personal AI assistant.
 You are helpful, intelligent, witty, and proactive. You speak in a friendly but professional tone.
 You have access to powerful tools: web search, PC control, email, WhatsApp, and more.
 Always be concise and helpful. Address the user as 'sir' occasionally for the BUJJI feel."""
@@ -36,7 +36,7 @@ agent = create_react_agent(llm, tools)
 
 chat_history = []
 
-def ask_bujji(user_input: str) -> str:
+def ask_jarvis(user_input: str) -> str:
     global chat_history
 
     memory_context = get_relevant_memory(user_input)
