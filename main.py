@@ -5,7 +5,7 @@ from config import WAKE_WORD
 def run_jarvis():
     speak("BUJJI online. How can I assist you, sir?")
     print("\n" + "="*50)
-    print("   BUJJI is active. Say 'bujji' to wake me.")
+    print("   BUJJI is active and ready!")
     print("   Type 'quit' to exit.")
     print("="*50 + "\n")
 
@@ -17,36 +17,27 @@ def run_jarvis():
         print("Sirf 'v' ya 't' daalo.")
 
     if mode == "v":
-        speak("Voice mode active. Bujji bolo jab baat karni ho.")
-        print("\n[Voice mode active — 'bujji' bol ke activate karo]\n")
+        speak("Voice mode active. Bol do kya karna hai.")
+        print("\n[Voice mode — seedha bolo, koi wake word nahi!]\n")
     else:
         speak("Text mode active.")
         print("\n[Text mode active]\n")
 
-    # Main loop — mode ab nahi poochenga
     while True:
         try:
             if mode == "v":
-                print(f"Listening for 'bujji'...")
-                trigger = listen(timeout=8)
-                print(f"[Heard]: '{trigger}'")
-
-                wake_variants = ["bujji", "buji", "buddy", "boozy", "boo ji", "boo gee"]
-                detected = any(w in trigger.lower() for w in wake_variants)
-
-                if not detected:
-                    # Silent retry — koi message nahi, seedha listen karo
-                    continue
-
-                speak("Yes sir!")
-                print("BUJJI: Yes sir!")
-
-                user_input = listen(timeout=10)
-                print(f"[Command]: '{user_input}'")
+                print("Listening... (bolo)")
+                user_input = listen(timeout=6)
 
                 if not user_input:
-                    speak("Suna nahi. Dobara boliye.")
                     continue
+
+                print(f"You: {user_input}")
+
+                # Exit commands
+                if any(w in user_input for w in ["band kar", "shut down", "goodbye", "bye bujji", "exit"]):
+                    speak("Goodbye sir. BUJJI shutting down.")
+                    break
 
             else:
                 user_input = input("You: ").strip()
