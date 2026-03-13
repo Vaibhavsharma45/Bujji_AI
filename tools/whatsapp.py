@@ -1,25 +1,28 @@
 import pywhatkit
-from langchain.tools import tool
+from langchain_core.tools import tool
+from logger import get_logger
+
+log = get_logger("tool.whatsapp")
+
 
 @tool
-def send_whatsapp(input_str: str) -> str:
+def send_whatsapp(phone_number: str, message: str) -> str:
     """
-    Send a WhatsApp message. Input format: '+91XXXXXXXXXX | Your message here'
-    Phone number must include country code. Example: '+919876543210 | Hello bhai!'
-    Note: WhatsApp Web must be open in Chrome.
+    Send a WhatsApp message via WhatsApp Web.
+    phone_number: must include country code, e.g. +919876543210.
+    message: text to send.
     """
+    if not phone_number.startswith("+"):
+        return "Phone number must start with country code, e.g. +91..."
+    log.info(f"WhatsApp → {phone_number}")
     try:
-        parts = [p.strip() for p in input_str.split("|")]
-        if len(parts) != 2:
-            return "Format: phone_number | message"
-        phone, message = parts
-
         pywhatkit.sendwhatmsg_instantly(
-            phone_no=phone,
-            message=message,
-            wait_time=10,
-            tab_close=True
+            phone_number, message,
+            wait_time=12,
+            tab_close=True,
+            close_time=3,
         )
-        return f"WhatsApp message sent to {phone}."
+        return f"WhatsApp message sent to {phone_number}."
     except Exception as e:
-        return f"WhatsApp send failed: {str(e)}"
+        log.error(f"WhatsApp error: {e}")
+        return f"WhatsApp failed: {e}"

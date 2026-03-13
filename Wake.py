@@ -1,43 +1,50 @@
+"""
+wake.py — Offline wake word detection using pvporcupine.
+Uses a threading lock to prevent double-triggering.
+"""
 import pvporcupine
 import pyaudio
 import struct
 import threading
 import time
+from config import PICOVOICE_KEY, WAKE_WORD, WAKE_COOLDOWN
+from logger import get_logger
 
-PICOVOICE_KEY = "KdA+Hptz+YxsFsqvTklFbrPtm4ndd/+k51BbeeaUAlLT5E7N17cozQ=="
-WAKE_WORD     = "jarvis"  # Picovoice ke predefined keywords: https://picovoice.ai/docs/porcupine/available-keywords/
+log = get_logger("wake")
 
-_listening  = False
-_thread     = None
-_callback   = None
-_lock       = threading.Lock()
-_processing = False  # Command process ho raha hai ya nahi
+_listening:  bool  = False
+_thread:     threading.Thread | None = None
+_callback          = None
+_processing: bool  = False
+_lock              = threading.Lock()
+
 
 def _listen_loop():
     global _listening, _processing
 
     try:
-        porcupine = pvporcupine.create(
-            access_key=PICOVOICE_KEY,
-            keywords=[WAKE_WORD]
-        )
-    except pvporcupine.PorcupineInvalidArgumentError:
-        print("[Wake] Invalid key. Free key: https://console.picovoice.ai")
+        porcupine = pvporcupine.create(access_key=PICOVOICE_KEY, keywords=[WAKE_WORD])
+        log.info(f"Wake detection ready — keyword: '{WAKE_WORD}'")
+        print(f"  [Wake] Listening for '{WAKE_WORD}'…")
+    except pvporcupine.PorcupineActivationError:
+        print("  [Wake] Invalid Picovoice key → https://console.picovoice.ai")
+        log.error("Invalid Picovoice key")
+        return
+    except pvporcupine.PorcupineInvalidArgumentError as e:
+        print(f"  [Wake] Keyword error: {e}")
+        log.error(f"Keyword error: {e}")
         return
     except Exception as e:
-        print(f"[Wake] Init failed: {e}")
+        print(f"  [Wake] Init failed: {e}")
+        log.error(f"Init failed: {e}")
         return
 
     pa     = pyaudio.PyAudio()
     stream = pa.open(
-        rate=porcupine.sample_rate,
-        channels=1,
-        format=pyaudio.paInt16,
-        input=True,
+        rate=porcupine.sample_rate, channels=1,
+        format=pyaudio.paInt16, input=True,
         frames_per_buffer=porcupine.frame_length,
     )
-
-    print(f"[Wake] Ready — '{WAKE_WORD}' bolo...")
 
     try:
         while _listening:
@@ -48,25 +55,27 @@ def _listen_loop():
             if index >= 0:
                 with _lock:
                     if _processing:
-                        continue  # Already processing — ignore
+                        continue
                     _processing = True
-
-                print("[Wake] Detected!")
-                threading.Thread(target=_run_callback, daemon=True).start()
+                log.info("Wake word detected")
+                threading.Thread(target=_fire_callback, daemon=True).start()
     finally:
         stream.stop_stream()
         stream.close()
         pa.terminate()
         porcupine.delete()
+        log.info("Wake detection stopped")
 
-def _run_callback():
+
+def _fire_callback():
     global _processing
     try:
         if _callback:
             _callback()
     finally:
-        time.sleep(2)
-        _processing = False  # Done — ab dobara sun sakte hain
+        time.sleep(WAKE_COOLDOWN)
+        _processing = False
+
 
 def start_wake_detection(on_wake_callback):
     global _listening, _thread, _callback
@@ -74,6 +83,7 @@ def start_wake_detection(on_wake_callback):
     _listening = True
     _thread    = threading.Thread(target=_listen_loop, daemon=True)
     _thread.start()
+
 
 def stop_wake_detection():
     global _listening

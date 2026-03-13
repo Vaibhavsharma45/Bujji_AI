@@ -1,31 +1,66 @@
+"""
+tools/email_tool.py — Gmail integration
+Supports plain text, HTML emails, and file attachments.
+"""
+import os
 import smtplib
-from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from langchain.tools import tool
-from config import EMAIL_ADDRESS, EMAIL_PASSWORD
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
+from langchain_core.tools import tool
+from config import EMAIL_ADDRESS, EMAIL_PASSWORD, SMTP_HOST, SMTP_PORT
+from logger import get_logger
+
+log = get_logger("tool.email")
+
+
+def _build_message(to: str, subject: str, body: str, attachment_path: str = "") -> MIMEMultipart:
+    msg = MIMEMultipart()
+    msg["From"]    = EMAIL_ADDRESS
+    msg["To"]      = to
+    msg["Subject"] = subject
+    msg.attach(MIMEText(body, "plain"))
+
+    if attachment_path and os.path.isfile(attachment_path):
+        with open(attachment_path, "rb") as f:
+            part = MIMEBase("application", "octet-stream")
+            part.set_payload(f.read())
+        encoders.encode_base64(part)
+        part.add_header(
+            "Content-Disposition",
+            f"attachment; filename={os.path.basename(attachment_path)}"
+        )
+        msg.attach(part)
+    return msg
+
 
 @tool
-def send_email(input_str: str) -> str:
+def send_email(to: str, subject: str, body: str, attachment_path: str = "") -> str:
     """
-    Send an email. Input format: 'to@email.com | Subject | Body message'
-    Example: 'friend@gmail.com | Meeting tomorrow | Hi, just confirming our meeting at 5pm.'
+    Send an email via Gmail.
+    to: recipient email (e.g. someone@gmail.com).
+    subject: email subject line.
+    body: email body text.
+    attachment_path: optional full path to file to attach.
     """
+    if not EMAIL_ADDRESS or not EMAIL_PASSWORD:
+        return "Email not configured. Set EMAIL_ADDRESS and EMAIL_PASSWORD in .env"
+    if not to or "@" not in to:
+        return "Invalid email address."
+
+    log.info(f"Sending email → {to}: {subject}")
     try:
-        parts = [p.strip() for p in input_str.split("|")]
-        if len(parts) != 3:
-            return "Format should be: recipient | subject | body"
-        to_email, subject, body = parts
-
-        msg = MIMEMultipart()
-        msg["From"]    = EMAIL_ADDRESS
-        msg["To"]      = to_email
-        msg["Subject"] = subject
-        msg.attach(MIMEText(body, "plain"))
-
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        msg = _build_message(to, subject, body, attachment_path)
+        with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=15) as server:
             server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-            server.sendmail(EMAIL_ADDRESS, to_email, msg.as_string())
-
-        return f"Email sent to {to_email} successfully."
+            server.sendmail(EMAIL_ADDRESS, to, msg.as_string())
+        return f"Email sent to {to}."
+    except smtplib.SMTPAuthenticationError:
+        return "Gmail auth failed. Use 16-char App Password from myaccount.google.com/apppasswords"
+    except smtplib.SMTPException as e:
+        log.error(f"SMTP error: {e}")
+        return f"Email failed: {e}"
     except Exception as e:
-        return f"Failed to send email: {str(e)}"
+        log.error(f"Email error: {e}")
+        return f"Email error: {e}"

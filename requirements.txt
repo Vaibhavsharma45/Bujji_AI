@@ -1,15 +1,33 @@
-langchain==0.3.25
-langchain-groq==0.3.2
-langchain-community==0.3.23
-langchain-core==0.3.55
-chromadb
+# ── Core LLM + Agent ──────────────────────────────────────────────
+langchain
+langchain-groq
+langchain-core
+langgraph
+
+# ── Voice ─────────────────────────────────────────────────────────
 SpeechRecognition
 pyttsx3
 pyaudio
+pvporcupine
+
+# ── Memory ────────────────────────────────────────────────────────
+chromadb
+
+# ── Tools ─────────────────────────────────────────────────────────
 ddgs
 pywhatkit
-pyautogui
+psutil
+schedule
+pyperclip
+librosa
+numpy
+
+# ── API ───────────────────────────────────────────────────────────
 fastapi
-uvicorn
+uvicorn[standard]
+
+# ── CLI ───────────────────────────────────────────────────────────
+rich
+
+# ── Utils ─────────────────────────────────────────────────────────
 python-dotenv
-requests
