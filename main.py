@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""BUJJI v4 — FRIDAY Edition. Run: python main.py"""
+"""BUJJI v5 FRIDAY Edition. Run: python main.py"""
 import os, sys, time, threading
 from datetime import datetime
 
@@ -16,8 +16,8 @@ try:
         art.append("█████╗  ██████╔╝██║██║  ██║███████║ ╚████╔╝ \n", "bold magenta")
         art.append("██╔══╝  ██╔══██╗██║██║  ██║██╔══██║  ╚██╔╝  \n", "bold magenta")
         art.append("██║     ██║  ██║██║██████╔╝██║  ██║   ██║   \n", "bold magenta")
-        art.append("╚═╝     ╚═╝  ╚═╝╚═╝╚═════╝ ╚═╝  ╚═╝   ╚═╝   \n", "bold magenta")
-        art.append(f"BUJJI — FRIDAY Edition  v4.0 — {datetime.now().strftime('%d %b %Y')}\n", "dim")
+        art.append("╚═╝     ╚═╝  ╚═╝╚═╝╚═════╝ ╚═╝  ╚═╝   ╚═╝  \n", "bold magenta")
+        art.append(f"BUJJI — FRIDAY Edition  v5.0 — {datetime.now().strftime('%d %b %Y')}\n", "dim")
         _con.print(Panel(art, border_style="magenta", padding=(0, 2)))
     def _info(m):  _con.print(f"  [dim]→[/dim] {m}", highlight=False)
     def _ok(m):    _con.print(f"  [green]✓[/green] {m}", highlight=False)
@@ -26,7 +26,7 @@ try:
     def _fri(m):   _con.print(f"  [bold magenta]FRIDAY:[/bold magenta] [magenta]{m}[/magenta]\n")
     def _div():    _con.print(Rule(style="dim"))
 except ImportError:
-    def _banner():   print("\n=== BUJJI v4 FRIDAY Edition ===\n")
+    def _banner():   print("\n=== BUJJI v5 FRIDAY ===\n")
     def _info(m):    print(f"  -> {m}")
     def _ok(m):      print(f"  OK {m}")
     def _warn(m):    print(f"  !  {m}")
@@ -42,28 +42,42 @@ from logger import get_logger
 
 log = get_logger("main")
 
-_FILLERS = ["hey jarvis","jarvis","hey bujji","bujji","hey friday","friday",
-            "okay friday","ok friday","hey google","ok google","arre bujji"]
+_FILLERS = [
+    "hey jarvis", "jarvis", "hey bujji", "bujji",
+    "hey friday", "friday", "okay friday", "ok friday",
+    "hey google", "ok google", "arre bujji", "suno bujji",
+]
+
+_EXIT_WORDS = [
+    "exit", "quit", "bye", "goodbye", "band kar", "shut down",
+    "shutdown", "soja", "bye bujji", "bye friday", "exit exit",
+    "shutting down", "band karo", "close karo",
+]
 
 def _clean(t):
+    t = t.lower().strip()
     for f in _FILLERS:
         t = t.replace(f, "")
     return t.strip()
 
+def _is_exit(cmd):
+    return any(w in cmd for w in _EXIT_WORDS)
+
 def _builtin(cmd):
-    if any(k in cmd for k in ["clear memory","memory clear","memory delete"]):
-        return True, clear_memory()
-    if any(k in cmd for k in ["memory stats","kitni memories"]):
-        return True, memory_stats()
-    if any(k in cmd for k in ["clear history","chat clear"]):
-        return True, clear_history()
-    if cmd in ("time","what time","time kya hai","time batao","abhi kitna baj raha hai"):
-        return True, f"Bhaiya, abhi {datetime.now().strftime('%I:%M %p')} baj rahe hain!"
-    if cmd in ("date","today","aaj ki date","date batao"):
-        return True, f"Aaj {datetime.now().strftime('%A, %d %B %Y')} hai bhaiya."
-    if any(k in cmd for k in ["band kar","shut down","shutdown","goodbye","bye","exit","quit","soja"]):
-        speak("Theek hai bhaiya, main so raha hoon. Bye bye!")
+    if _is_exit(cmd):
+        speak("Theek hai bhaiya, so raha hoon. Bye bye!")
+        log.info("Exit command: " + cmd)
         sys.exit(0)
+    if any(k in cmd for k in ["clear memory", "memory clear", "memory delete", "memory bhool"]):
+        return True, clear_memory()
+    if any(k in cmd for k in ["memory stats", "kitni memories", "memory count"]):
+        return True, memory_stats()
+    if any(k in cmd for k in ["clear history", "chat clear", "history clear"]):
+        return True, clear_history()
+    if any(k in cmd for k in ["time kya", "abhi kitne baj", "what time", "time batao"]):
+        return True, "Bhaiya abhi " + datetime.now().strftime("%I:%M %p") + " baj rahe hain!"
+    if any(k in cmd for k in ["aaj ki date", "today date", "date batao", "kaunsa din"]):
+        return True, "Aaj " + datetime.now().strftime("%A, %d %B %Y") + " hai bhaiya."
     return False, ""
 
 def _process(text, raw=b"", sr_rate=0):
@@ -71,7 +85,7 @@ def _process(text, raw=b"", sr_rate=0):
     if not text:
         return
     _you(text)
-    log.info(f"Input: {text}")
+    log.info("Input: " + text)
     handled, resp = _builtin(text)
     if handled:
         _fri(resp)
@@ -101,11 +115,11 @@ def _on_wake():
 
 def run_wake_mode():
     if PICOVOICE_KEY == "YOUR_KEY_HERE":
-        _warn("PICOVOICE_KEY set nahi hai. Voice mode pe aa raha hoon.")
+        _warn("PICOVOICE_KEY set nahi. Voice mode pe aa raha hoon.")
         run_voice_mode()
         return
     from wake import start_wake_detection
-    speak("FRIDAY online bhaiya. Jarvis bolo toh main sun lunga!")
+    speak("FRIDAY online bhaiya. Jarvis bolo toh sun lunga!")
     _ok("Wake word mode — say 'Jarvis'")
     _div()
     start_wake_detection(on_wake_callback=_on_wake)
@@ -114,10 +128,10 @@ def run_wake_mode():
     except KeyboardInterrupt:
         from wake import stop_wake_detection
         stop_wake_detection()
-        speak("Theek hai bhaiya, so raha hoon. Bye!")
+        speak("Theek hai bhaiya, bye!")
 
 def run_voice_mode():
-    speak("Voice mode active bhaiya. Bolo kya karna hai!")
+    speak("Voice mode active bhaiya!")
     _ok("Voice mode — speak anytime")
     _div()
     while True:
@@ -149,7 +163,7 @@ def main():
     _banner()
     validate()
     print()
-    speak("FRIDAY online! Bolo bhaiya, kya karna hai aaj?")
+    speak("FRIDAY online! Kya karna hai aaj bhaiya?")
     print("  Mode select karo:")
     print("    [w]  Wake word  (Jarvis bolo)")
     print("    [v]  Voice      (seedha bolo)")
@@ -160,7 +174,7 @@ def main():
             mode = input("  Mode: ").strip().lower()
         except (KeyboardInterrupt, EOFError):
             sys.exit(0)
-        if mode in ("w","v","t"):
+        if mode in ("w", "v", "t"):
             break
         _warn("w, v, ya t daalo bhaiya")
     _div()

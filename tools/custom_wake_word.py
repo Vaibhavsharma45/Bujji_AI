@@ -1,5 +1,11 @@
+"""
+tools/custom_wake_word.py — Custom Wake Word Training
+Uses Picovoice Porcupine with a custom "Hey BUJJI" keyword model.
+Falls back to "jarvis" built-in if custom model not available.
+"""
 import os, threading, time, struct
 from logger import get_logger
+
 log = get_logger("wake")
 
 _listening  = False
@@ -8,39 +14,46 @@ _callback   = None
 _processing = False
 _lock       = threading.Lock()
 
-CUSTOM_MODEL = os.path.join(os.path.dirname(os.path.abspath(__file__)), "hey_bujji.ppn")
+# Path where user puts their custom .ppn model file
+CUSTOM_MODEL_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "..", "hey_bujji.ppn"
+)
+
 
 def _listen_loop():
     global _listening, _processing
-    try:
-        import pvporcupine, pyaudio
-    except ImportError:
-        print("  [Wake] pip install pvporcupine pyaudio")
-        return
+    import pvporcupine, pyaudio
 
     access_key = os.getenv("PICOVOICE_KEY", "")
 
     try:
-        if os.path.exists(CUSTOM_MODEL):
+        # Try custom "Hey BUJJI" model first
+        if os.path.exists(CUSTOM_MODEL_PATH):
             porcupine = pvporcupine.create(
                 access_key=access_key,
-                keyword_paths=[CUSTOM_MODEL],
+                keyword_paths=[CUSTOM_MODEL_PATH],
             )
-            print("  [Wake] Custom wake word loaded: " + CUSTOM_MODEL)
-            log.info("Custom wake word: " + CUSTOM_MODEL)
+            log.info("Custom wake word 'Hey BUJJI' loaded!")
+            print("  [Wake] Custom 'Hey BUJJI' model loaded!")
         else:
+            # Fallback to built-in jarvis
             porcupine = pvporcupine.create(
                 access_key=access_key,
                 keywords=["jarvis"],
             )
-            print("  [Wake] Using built-in 'Jarvis' keyword.")
-            print("  [Wake] Custom wake word ke liye: hey_bujji.ppn project folder mein daalo")
+            log.info("Using built-in 'Jarvis' wake word (no hey_bujji.ppn found)")
+            print("  [Wake] Using 'Jarvis' wake word.")
+            print("  [Wake] Custom 'Hey BUJJI' ke liye: hey_bujji.ppn project folder mein daalo")
+            print("  [Wake] Download: https://console.picovoice.ai -> Wake Word -> Create 'hey bujji'")
+
+    except pvporcupine.PorcupineActivationError:
+        print("  [Wake] Invalid Picovoice key!")
+        return
     except Exception as e:
-        print("  [Wake] Init failed: " + str(e))
-        log.error("Wake init: " + str(e))
+        print(f"  [Wake] Init failed: {e}")
         return
 
-    pa = pyaudio.PyAudio()
+    pa     = pyaudio.PyAudio()
     stream = pa.open(
         rate=porcupine.sample_rate,
         channels=1,
@@ -49,12 +62,12 @@ def _listen_loop():
         frames_per_buffer=porcupine.frame_length,
     )
 
-    print("  [Wake] Listening...")
     try:
         while _listening:
-            pcm = stream.read(porcupine.frame_length, exception_on_overflow=False)
-            pcm = struct.unpack_from("h" * porcupine.frame_length, pcm)
-            if porcupine.process(pcm) >= 0:
+            pcm   = stream.read(porcupine.frame_length, exception_on_overflow=False)
+            pcm   = struct.unpack_from("h" * porcupine.frame_length, pcm)
+            index = porcupine.process(pcm)
+            if index >= 0:
                 with _lock:
                     if _processing:
                         continue
@@ -67,6 +80,7 @@ def _listen_loop():
         pa.terminate()
         porcupine.delete()
 
+
 def _fire():
     global _processing
     try:
@@ -76,12 +90,14 @@ def _fire():
         time.sleep(2.5)
         _processing = False
 
+
 def start_wake_detection(on_wake_callback):
     global _listening, _thread, _callback
     _callback  = on_wake_callback
     _listening = True
     _thread    = threading.Thread(target=_listen_loop, daemon=True)
     _thread.start()
+
 
 def stop_wake_detection():
     global _listening

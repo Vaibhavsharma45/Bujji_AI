@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>BUJJI — FRIDAY Dashboard</title>
+<style>
+  :root { --bg:#0a0a0f; --bg2:#111118; --bg3:#1a1a24; --accent:#b060ff; --accent2:#7030d0; --cyan:#00d4ff; --green:#00ff88; --text:#e0e0ff; --muted:#666688; --border:rgba(176,96,255,0.2); }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(176,96,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(176,96,255,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+  .container{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:24px}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:32px}
+  .logo{display:flex;align-items:center;gap:16px}
+  .logo-ring{width:56px;height:56px;border-radius:50%;border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;position:relative;box-shadow:0 0 20px rgba(176,96,255,0.4);animation:pulse 2s ease-in-out infinite}
+  .logo-inner{width:32px;height:32px;border-radius:50%;background:var(--accent2)}
+  @keyframes pulse{0%,100%{box-shadow:0 0 20px rgba(176,96,255,0.4)}50%{box-shadow:0 0 40px rgba(176,96,255,0.7)}}
+  .logo-text h1{font-size:28px;font-weight:700;letter-spacing:4px;color:var(--accent)}
+  .logo-text p{font-size:12px;color:var(--muted);letter-spacing:2px}
+  .status-pill{display:flex;align-items:center;gap:8px;background:rgba(0,255,136,0.1);border:1px solid rgba(0,255,136,0.3);padding:8px 16px;border-radius:20px;font-size:12px;color:var(--green)}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:blink 1.5s infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+  .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+  .stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;position:relative;overflow:hidden}
+  .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--cyan))}
+  .stat-label{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+  .stat-value{font-size:28px;font-weight:700}
+  .stat-unit{font-size:12px;color:var(--muted);margin-left:4px}
+  .stat-bar{margin-top:10px;height:3px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden}
+  .stat-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--accent),var(--cyan));transition:width 0.8s ease}
+  .main-grid{display:grid;grid-template-columns:1fr 380px;gap:20px}
+  .chat-panel{background:var(--bg2);border:1px solid var(--border);border-radius:16px;display:flex;flex-direction:column;height:520px}
+  .panel-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+  .panel-title{font-size:13px;font-weight:600;letter-spacing:1px;color:var(--accent);text-transform:uppercase}
+  .chat-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+  .chat-msgs::-webkit-scrollbar{width:4px}
+  .chat-msgs::-webkit-scrollbar-thumb{background:var(--accent2);border-radius:2px}
+  .msg{max-width:85%;padding:10px 14px;border-radius:12px;font-size:14px;line-height:1.5}
+  .msg-user{align-self:flex-end;background:var(--accent2);color:#fff;border-bottom-right-radius:4px}
+  .msg-bujji{align-self:flex-start;background:var(--bg3);border:1px solid var(--border);border-bottom-left-radius:4px}
+  .sender{font-size:10px;color:var(--accent);font-weight:600;letter-spacing:1px;margin-bottom:4px}
+  .msg-time{font-size:10px;color:var(--muted);margin-top:4px}
+  .chat-input{padding:12px;border-top:1px solid var(--border);display:flex;gap:8px}
+  .chat-input input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:14px;outline:none;transition:border-color 0.2s}
+  .chat-input input:focus{border-color:var(--accent)}
+  .send-btn{background:var(--accent2);border:none;color:#fff;padding:10px 18px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:background 0.2s}
+  .send-btn:hover{background:var(--accent)}
+  .right-panel{display:flex;flex-direction:column;gap:16px}
+  .activity-panel{background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:hidden;flex:1}
+  .activity-list{padding:12px;display:flex;flex-direction:column;gap:8px;max-height:240px;overflow-y:auto}
+  .act-item{display:flex;align-items:flex-start;gap:10px;padding:8px;border-radius:8px;background:var(--bg3)}
+  .act-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+  .act-text{font-size:12px;line-height:1.4}
+  .act-time{font-size:10px;color:var(--muted);margin-top:2px}
+  .tools-panel{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:16px}
+  .tools-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+  .tool-btn{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px;cursor:pointer;font-size:11px;color:var(--muted);text-align:center;transition:all 0.2s;display:flex;flex-direction:column;align-items:center;gap:4px}
+  .tool-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(176,96,255,0.05)}
+  .tool-icon{font-size:18px}
+  .wave{display:none;align-items:center;gap:3px;height:20px;margin-left:auto}
+  .wave.on{display:flex}
+  .wb{width:3px;background:var(--accent);border-radius:2px;animation:wv 0.8s ease-in-out infinite}
+  .wb:nth-child(2){animation-delay:.1s}.wb:nth-child(3){animation-delay:.2s}.wb:nth-child(4){animation-delay:.3s}.wb:nth-child(5){animation-delay:.4s}
+  @keyframes wv{0%,100%{height:4px}50%{height:18px}}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">
+      <div class="logo-ring"><div class="logo-inner"></div></div>
+      <div class="logo-text"><h1>FRIDAY</h1><p>BUJJI AI — PERSONAL ASSISTANT</p></div>
+    </div>
+    <div class="status-pill"><div class="dot"></div>ONLINE</div>
+  </header>
+
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">CPU</div><div><span class="stat-value" id="cpu">--</span><span class="stat-unit">%</span></div><div class="stat-bar"><div class="stat-fill" id="cpu-bar" style="width:0"></div></div></div>
+    <div class="stat-card"><div class="stat-label">RAM</div><div><span class="stat-value" id="ram">--</span><span class="stat-unit">%</span></div><div class="stat-bar"><div class="stat-fill" id="ram-bar" style="width:0"></div></div></div>
+    <div class="stat-card"><div class="stat-label">Battery</div><div><span class="stat-value" id="bat">--</span><span class="stat-unit">%</span></div><div class="stat-bar"><div class="stat-fill" id="bat-bar" style="width:0"></div></div></div>
+    <div class="stat-card"><div class="stat-label">Memories</div><div><span class="stat-value" id="mem">--</span></div><div style="margin-top:10px;font-size:11px;color:var(--muted)" id="upt">Loading...</div></div>
+  </div>
+
+  <div class="main-grid">
+    <div class="chat-panel">
+      <div class="panel-header">
+        <div class="panel-title">Chat with FRIDAY</div>
+        <div class="wave" id="wave"><div class="wb"></div><div class="wb"></div><div class="wb"></div><div class="wb"></div><div class="wb"></div></div>
+      </div>
+      <div class="chat-msgs" id="chat">
+        <div class="msg msg-bujji"><div class="sender">FRIDAY</div>Haan bhaiya! Dashboard ready hai. Kya karna hai aaj? 🚀<div class="msg-time">Just now</div></div>
+      </div>
+      <div class="chat-input">
+        <input type="text" id="inp" placeholder="Bolo bhaiya..." onkeydown="if(event.key==='Enter')send()">
+        <button class="send-btn" onclick="send()">Send</button>
+      </div>
+    </div>
+
+    <div class="right-panel">
+      <div class="activity-panel">
+        <div class="panel-header"><div class="panel-title">Activity</div></div>
+        <div class="activity-list" id="acts"></div>
+      </div>
+      <div class="tools-panel">
+        <div class="panel-title" style="font-size:12px">Quick Actions</div>
+        <div class="tools-grid">
+          <div class="tool-btn" onclick="q('system info batao')"><div class="tool-icon">💻</div>System</div>
+          <div class="tool-btn" onclick="q('search latest AI news')"><div class="tool-icon">🔍</div>Search</div>
+          <div class="tool-btn" onclick="q('open youtube')"><div class="tool-icon">▶️</div>YouTube</div>
+          <div class="tool-btn" onclick="q('screenshot lo')"><div class="tool-icon">📸</div>Screenshot</div>
+          <div class="tool-btn" onclick="q('top processes')"><div class="tool-icon">📊</div>Processes</div>
+          <div class="tool-btn" onclick="q('memory stats')"><div class="tool-icon">🧠</div>Memory</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const API='http://localhost:8000';
+const t=()=>new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+function addMsg(txt,type){
+  const c=document.getElementById('chat'),d=document.createElement('div');
+  d.className='msg msg-'+type;
+  d.innerHTML=type==='bujji'?`<div class="sender">FRIDAY</div>${txt}<div class="msg-time">${t()}</div>`:`${txt}<div class="msg-time">${t()}</div>`;
+  c.appendChild(d);c.scrollTop=c.scrollHeight;
+}
+function addAct(icon,txt,col='#b060ff'){
+  const l=document.getElementById('acts'),i=document.createElement('div');
+  i.className='act-item';
+  i.innerHTML=`<div class="act-icon" style="background:${col}22;color:${col}">${icon}</div><div><div class="act-text">${txt}</div><div class="act-time">${t()}</div></div>`;
+  l.prepend(i);if(l.children.length>20)l.removeChild(l.lastChild);
+}
+async function send(){
+  const inp=document.getElementById('inp'),query=inp.value.trim();
+  if(!query)return;inp.value='';
+  addMsg(query,'user');addAct('💬',query);
+  document.getElementById('wave').classList.add('on');
+  try{
+    const r=await fetch(`${API}/ask`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query,emotion:'neutral'})});
+    const d=await r.json();
+    addMsg(d.response,'bujji');addAct('🤖',d.response.substring(0,60),'#00d4ff');
+  }catch(e){addMsg('API server chalu karo: <b>uvicorn api.server:app --reload</b>','bujji');}
+  document.getElementById('wave').classList.remove('on');
+}
+function q(cmd){document.getElementById('inp').value=cmd;send();}
+async function stats(){
+  try{
+    const r=await fetch(`${API}/stats`),d=await r.json();
+    document.getElementById('cpu').textContent=d.cpu??'--';
+    document.getElementById('ram').textContent=d.ram??'--';
+    document.getElementById('bat').textContent=d.battery??'--';
+    document.getElementById('mem').textContent=d.memories??'--';
+    document.getElementById('upt').textContent='Uptime: '+(d.uptime||'--');
+    document.getElementById('cpu-bar').style.width=(d.cpu||0)+'%';
+    document.getElementById('ram-bar').style.width=(d.ram||0)+'%';
+    document.getElementById('bat-bar').style.width=(d.battery||0)+'%';
+  }catch(e){}
+}
+stats();setInterval(stats,5000);
+</script>
+</body>
+</html>

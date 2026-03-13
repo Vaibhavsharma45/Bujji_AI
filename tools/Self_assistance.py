@@ -1,24 +1,21 @@
-import os, subprocess, time
+import os, subprocess
 from langchain_core.tools import tool
 from logger import get_logger
-
 log = get_logger("tool.self")
 
 @tool
 def type_text(text: str) -> str:
-    """Type any text at the current cursor position using keyboard automation."""
+    """Type any text at current cursor position."""
     try:
         import pyautogui
         pyautogui.write(text, interval=0.03)
-        return f"Typed: {text[:50]}"
-    except ImportError:
-        return "pip install pyautogui"
+        return "Typed: " + text[:50]
     except Exception as e:
-        return f"Type error: {e}"
+        return "Type error: " + str(e)
 
 @tool
 def press_key(key: str) -> str:
-    """Press a keyboard key or shortcut. Examples: enter, escape, ctrl+c, alt+tab, win."""
+    """Press keyboard key or shortcut e.g. enter, escape, ctrl+c, alt+tab."""
     try:
         import pyautogui
         keys = [k.strip() for k in key.lower().split("+")]
@@ -26,114 +23,102 @@ def press_key(key: str) -> str:
             pyautogui.press(keys[0])
         else:
             pyautogui.hotkey(*keys)
-        return f"Pressed: {key}"
-    except ImportError:
-        return "pip install pyautogui"
+        return "Pressed: " + key
     except Exception as e:
-        return f"Key error: {e}"
+        return "Key error: " + str(e)
 
 @tool
 def click_screen(x: int, y: int) -> str:
-    """Click at specific screen coordinates (x, y pixels from top-left)."""
+    """Click at screen coordinates (x, y)."""
     try:
         import pyautogui
         pyautogui.click(x, y)
-        return f"Clicked at ({x}, {y})."
-    except ImportError:
-        return "pip install pyautogui"
+        return "Clicked at (" + str(x) + ", " + str(y) + ")."
     except Exception as e:
-        return f"Click error: {e}"
+        return "Click error: " + str(e)
 
 @tool
 def scroll_screen(direction: str = "down", amount: int = 3) -> str:
-    """Scroll the screen. direction: up or down. amount: scroll steps."""
+    """Scroll screen up or down."""
     try:
         import pyautogui
-        clicks = amount if direction == "up" else -amount
-        pyautogui.scroll(clicks)
-        return f"Scrolled {direction} by {amount}."
+        pyautogui.scroll(amount if direction == "up" else -amount)
+        return "Scrolled " + direction
     except Exception as e:
-        return f"Scroll error: {e}"
+        return "Scroll error: " + str(e)
 
 @tool
 def get_clipboard_content() -> str:
     """Read current clipboard content."""
     try:
         import pyperclip
-        content = pyperclip.paste()
-        return f"Clipboard: {content[:400]}" if content else "Clipboard is empty."
+        c = pyperclip.paste()
+        return "Clipboard: " + c[:400] if c else "Clipboard empty."
     except Exception as e:
-        return f"Clipboard error: {e}"
+        return "Clipboard error: " + str(e)
 
 @tool
 def run_terminal_command(command: str) -> str:
-    """
-    Run a terminal/cmd command and return output.
-    Safe commands only: dir, ipconfig, ping, tasklist, echo, python --version, etc.
-    """
-    BLOCKED = ["rm", "del", "format", "shutdown", "mkfs", "dd ", ":(){", "rmdir /s"]
-    if any(b in command.lower() for b in BLOCKED):
-        return "That command is blocked for safety reasons."
+    """Run a safe terminal command and return output. E.g. ipconfig, dir, tasklist."""
+    blocked = ["rm ", "del ", "format ", "shutdown ", "rmdir /s", "mkfs", ":(){"]
+    if any(b in command.lower() for b in blocked):
+        return "Blocked for safety."
     try:
-        result = subprocess.run(
-            command, shell=True, capture_output=True, text=True, timeout=15
-        )
-        output = result.stdout.strip() or result.stderr.strip()
-        return output[:600] if output else "Command ran with no output."
+        r = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=15)
+        out = r.stdout.strip() or r.stderr.strip()
+        return out[:600] if out else "No output."
     except subprocess.TimeoutExpired:
-        return "Command timed out (15s limit)."
+        return "Timed out."
     except Exception as e:
-        return f"Command error: {e}"
+        return "Error: " + str(e)
 
 @tool
 def lock_screen() -> str:
-    """Lock the Windows screen."""
+    """Lock the Windows screen immediately."""
     try:
         import ctypes
         ctypes.windll.user32.LockWorkStation()
-        return "Screen locked."
+        return "Screen locked bhaiya."
     except Exception as e:
-        return f"Lock error: {e}"
+        return "Lock error: " + str(e)
 
 @tool
 def set_volume(level: int) -> str:
-    """Set Windows system volume. level: 0 to 100."""
+    """Set Windows system volume from 0 to 100."""
     try:
         from ctypes import cast, POINTER
         from comtypes import CLSCTX_ALL
         from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
+        level = max(0, min(100, level))
         devices = AudioUtilities.GetSpeakers()
         interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
         volume = cast(interface, POINTER(IAudioEndpointVolume))
-        level = max(0, min(100, level))
         volume.SetMasterVolumeLevelScalar(level / 100.0, None)
-        return f"System volume set to {level}%."
+        return "Volume " + str(level) + "% set bhaiya."
     except ImportError:
         return "pip install pycaw comtypes"
     except Exception as e:
-        return f"Volume error: {e}"
+        return "Volume error: " + str(e)
 
 @tool
 def mute_unmute() -> str:
-    """Toggle system mute/unmute."""
+    """Toggle system mute on or off."""
     try:
         import pyautogui
         pyautogui.press("volumemute")
-        return "Mute toggled."
+        return "Mute toggled bhaiya."
     except Exception as e:
-        return f"Mute error: {e}"
+        return "Mute error: " + str(e)
 
 @tool
 def open_file(filepath: str) -> str:
     """Open any file with its default application."""
     try:
-        import os, platform
+        import platform
         if not os.path.exists(filepath):
-            return f"File not found: {filepath}"
+            return "File not found: " + filepath
         if platform.system() == "Windows":
             os.startfile(filepath)
-        else:
-            subprocess.Popen(["xdg-open", filepath])
-        return f"Opened: {filepath}"
+        return "Opened: " + filepath
     except Exception as e:
-        return f"Open error: {e}"
+        return "Error: " + str(e)
